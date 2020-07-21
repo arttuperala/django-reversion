@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('contenttypes', '0002_remove_content_type_name'),
-        ('reversion', '0001_squashed_0004_auto_20160611_1202'),
+        ('reversion', '0004_auto_20160611_1202'),
     ]
 
     operations = [
