@@ -7,35 +7,6 @@ from django.db import DEFAULT_DB_ALIAS, migrations, models, router
 from django.apps import apps as live_apps
 
 
-def de_dupe_version_table(apps, schema_editor):
-    """
-    Removes some duplicate Version models that may have crept into the database and will prevent the
-    unique index being added by migration 0004.
-    """
-    db_alias = schema_editor.connection.alias
-    Version = apps.get_model("reversion", "Version")
-    keep_version_ids = Version.objects.using(db_alias).order_by().values_list(
-        # Group by the unique constraint we intend to enforce.
-        "revision_id",
-        "content_type_id",
-        "object_id",
-    ).annotate(
-        # Add in the most recent id for each duplicate row.
-        max_pk=models.Max("pk"),
-    ).values_list("max_pk", flat=True)
-    # Do not do anything if we're keeping all ids anyway.
-    if keep_version_ids.count() == Version.objects.using(db_alias).all().count():
-        return
-    # Delete all duplicate versions. Can't do this as a delete with subquery because MySQL doesn't like running a
-    # subquery on the table being updated/deleted.
-    delete_version_ids = list(Version.objects.using(db_alias).exclude(
-        pk__in=keep_version_ids,
-    ).values_list("pk", flat=True))
-    Version.objects.using(db_alias).filter(
-        pk__in=delete_version_ids,
-    ).delete()
-
-
 def set_version_db(apps, schema_editor):
     """
     Updates the db field in all Version models to point to the correct write
@@ -95,6 +66,5 @@ class Migration(migrations.Migration):
             name='db',
             field=models.CharField(null=True, help_text='The database the model under version control is stored in.', max_length=191),
         ),
-        migrations.RunPython(de_dupe_version_table),
         migrations.RunPython(set_version_db),
     ]

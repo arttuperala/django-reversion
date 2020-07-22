@@ -229,6 +229,7 @@ class Version(models.Model):
     )
 
     db = models.CharField(
+        null=True,
         max_length=191,
         help_text="The database the model under version control is stored in.",
     )
@@ -314,7 +315,7 @@ class Version(models.Model):
 
     class Meta:
         app_label = 'reversion'
-        unique_together = (
+        index_together = (
             ("db", "content_type", "object_id", "revision"),
         )
         ordering = ("-pk",)
